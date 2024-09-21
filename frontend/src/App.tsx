@@ -1,6 +1,7 @@
 import { AppShell, Burger, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import ConnectForm from './components/ConnectForm';
+import ReadsView from './components/ReadsView';
 
 export default function App() {
     const [opened, { toggle }] = useDisclosure();
@@ -33,7 +34,9 @@ export default function App() {
                 <ConnectForm />
             </AppShell.Navbar>
 
-            <AppShell.Main>Main</AppShell.Main>
+            <AppShell.Main>
+                <ReadsView />
+            </AppShell.Main>
         </AppShell>
     );
 }
