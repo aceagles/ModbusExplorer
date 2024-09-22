@@ -21,7 +21,6 @@ export default function App() {
                 <Group justify='space-between'>
 
                     <Burger
-                        opened={!opened}
                         onClick={toggle}
                         size="sm"
                     />
