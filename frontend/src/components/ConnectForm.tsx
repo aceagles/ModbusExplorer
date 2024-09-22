@@ -1,13 +1,21 @@
 import { Button, NumberInput, TextInput } from "@mantine/core";
-import { Form } from "@mantine/form";
-
+import { Connect } from "../../wailsjs/go/main/App";
+import { useState } from "react";
 export default function ConnectForm() {
+  const [IP, setIP] = useState<string>("");
+  const [port, setPort] = useState<string | number>(502);
+  const [unitID, setUnitID] = useState<number>(1);
+  function ConnectModbus() {
+    console.log("Connecting to", IP, port, unitID);
+    let portNum = port as number;
+    Connect(IP, portNum, unitID);
+  }
   return (
     <>
-      <TextInput label="IP Address" placeholder="192.168.1.100" />
-      <NumberInput label="Port" value={502} />
+      <TextInput label="IP Address" placeholder="192.168.1.100" onChange={(event) => setIP(event.currentTarget.value)}/>
+      <NumberInput label="Port" value={502} onChange={setPort}/>
       <NumberInput label="Unit ID" value={1} />
-      <Button>Connect</Button>
+      <Button onClick={ConnectModbus}>Connect</Button>
     </>
   )
 }

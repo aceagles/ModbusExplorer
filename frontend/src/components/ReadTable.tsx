@@ -1,6 +1,9 @@
 import { Menu, Stack, Container, Group, NumberInput, Select, Table, ActionIcon } from "@mantine/core";
 import { IconRefresh } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Read } from "../../wailsjs/go/main/App";
+import { main } from "../../wailsjs/go/models";
+type modbusData = main.modbusData;
 enum dataTypes {
   BIN = "BIN",
   U16 = "U16",
@@ -10,57 +13,58 @@ enum dataTypes {
   F32 = "F32",
 }
 
-interface modbusData {
-  address: number,
-  value: number
-}
 export function ReadTable() {
   // rawData array of modbusData
-  const rawData: modbusData[] = [
-    { address: 100, value: 0x1234 },
-    { address: 101, value: 0x5678 },
-    { address: 102, value: 0x9abc },
-    { address: 103, value: 0xdef0 },
-    { address: 104, value: 0x1234 },
-    { address: 105, value: 0x5678 },
-    { address: 106, value: 0x9abc },
-    { address: 107, value: 0xdef0 }
-  ];
+  const [rawData, setRawData] = useState<modbusData[]>([]);
   const [typeArray, setTypeArray] = useState<dataTypes[]>(Array(rawData.length).fill(dataTypes.U16));
+  useEffect(() => {
+    setTypeArray(Array(rawData.length).fill(dataTypes.U16));
+  }, [rawData.length]);
+  const rawDataCopy = [...rawData];
   const typedData: ({address: number, value: any} | undefined)[] = typeArray.map((type, i) => {
     switch (type) {
       case dataTypes.BIN:
-        {const val = rawData.shift()
-        // Convert to binary showing leading zeros
-        return {address: val!.address, value: val!.value.toString(2).padStart(16, '0')}
-      }
+        {
+          const val = rawDataCopy.shift();
+          // Convert to binary showing leading zeros
+          return { address: val!.Address, value: val!.Value.toString(2).padStart(16, '0') };
+        }
       case dataTypes.U16:
-        return rawData.shift()
+        {
+          const val = rawDataCopy.shift();
+          return { address: val!.Address, value: val!.Value };
+        }
       case dataTypes.U32:
         {
-        const val1 = rawData.shift()
-        const val2 = rawData.shift()
-        return {address: val1!.address, value: (val1!.value << 16) + val2!.value}
+          const val1 = rawDataCopy.shift();
+          const val2 = rawDataCopy.shift();
+            return { address: val1!.Address, value: val1!.Value << 16+ (val2!.Value) };
         }
       case dataTypes.I16:
-        let val = rawData.shift()
-        return {address: val!.address, value: val!.value - 0x10000}
+        {
+          const val = rawDataCopy.shift();
+          const value = val!.Value;
+          // Convert U16 to I16 using 2's complement
+          const signedValue = value > 0x7FFF ? value - 0x10000 : value;
+          return { address: val!.Address, value: signedValue };
+        }
       case dataTypes.I32:
-        {      
-          let val1 = rawData.shift()
-          let val2 = rawData.shift()
-          return {address: val1!.address, value: (val1!.value << 16) + val2!.value - 0x100000000}
+        {
+          const val1 = rawDataCopy.shift();
+          const val2 = rawDataCopy.shift();
+          const combinedValue = (val1!.Value << 16) + val2!.Value;
+          const signedValue = combinedValue > 0x7FFFFFFF ? combinedValue - 0x100000000 : combinedValue;
+          return { address: val1!.Address, value: (val1!.Value << 16) + val2!.Value - 0x100000000 };
         }
       case dataTypes.F32:
         {
-        let val1 = rawData.shift()
-        let val2 = rawData.shift()
-
-          return {address: val1!.address, value: new Float32Array(new Uint16Array([val1!.value, val2!.value]).buffer)[0]}
+          const val1 = rawDataCopy.shift();
+          const val2 = rawDataCopy.shift();
+          return { address: val1!.Address, value: new Float32Array(new Uint16Array([val1!.Value, val2!.Value]).buffer)[0] };
         }
     }
-  }
-  )
+  });
+  
   function setType(i: number, type: dataTypes) {
     if (typeArray[i] === type) {
       return
@@ -98,19 +102,32 @@ export function ReadTable() {
           return [...prev];});
         break;
   }
-}
+} 
+  const [address, setAddress] = useState<string | number>('');
+  const [quantity, setQuantity] = useState<string | number>('');
+  const [type, setReadType] = useState<string>("Holding Register");
+  function ReadModbus() {
+    Read(type, address as number, quantity as number)
+      .then((data) => {
+        console.log(data);
+        setRawData(data);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }
 
   return (
     <Container>
       <Stack>
         <Group justify="">
           <NumberInput placeholder="Start Register" size="xs"
-            radius="xs" />
+            radius="xs" onChange={setAddress}/>
           <NumberInput placeholder="Quantity" size="xs"
-            radius="xs" />
+            radius="xs" onChange={setQuantity}/>
           <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} placeholder="Type" size="xs"
-            radius="xs" />
-          <ActionIcon onClick={() => {}} variant="default" p={"2px"}>
+            radius="xs" onChange={value => setReadType(value!)}/>
+          <ActionIcon onClick={ReadModbus} variant="default" p={"2px"}>
             <IconRefresh />
           </ActionIcon>
         </Group>
@@ -118,19 +135,19 @@ export function ReadTable() {
           <Table.Thead>
             <Table.Tr>
               {
-                typedData.map((v, i) => (<Table.Th key={i}>{v!.address}</Table.Th>))
+                typedData.map((v, i) => (<Table.Th key={"address"+i}>{v!.address}</Table.Th>))
               }
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             <Table.Tr>
               {
-                typedData.map((v, i) => (<Table.Td key={i}>{v!.value}</Table.Td>))
+                typedData.map((v, i) => (<Table.Td key={"Value"+i}>{v!.value}</Table.Td>))
               }
             </Table.Tr>
             <Table.Tr>
               {
-                typeArray.map((v, i) => (<Table.Td><TypeSelector v={v} key={i} updateType={(s) => setType(i, s) }/></Table.Td>))
+                typeArray.map((v, i) => (<Table.Td key={"type"+i} ><TypeSelector v={v} updateType={(s) => setType(i, s) }/></Table.Td>))
               }
               </Table.Tr> 
           </Table.Tbody>
@@ -149,7 +166,7 @@ function TypeSelector(props: {v: string, updateType: (type: dataTypes) => void})
 
       <Menu.Dropdown>
         {Object.values(dataTypes).map((type) => (
-          <Menu.Item key={type} onClick={() => props.updateType(type)}>
+          <Menu.Item key={"Types" + type} onClick={() => props.updateType(type)}>
             {type}
           </Menu.Item>
         ))}
