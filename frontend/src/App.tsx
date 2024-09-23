@@ -2,9 +2,13 @@ import { AppShell, Burger, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import ConnectForm from './components/ConnectForm';
 import ReadsView from './components/ReadsView';
+import { EventsOn } from '../wailsjs/runtime'
+import { useEffect, useState } from 'react';
 
 export default function App() {
     const [opened, { toggle }] = useDisclosure();
+    const [isConnected, setIsConnected] = useState<boolean>(false)
+    useEffect(() => EventsOn("setConnected", (isCon: boolean) => setIsConnected(isCon)), [])
 
     return (
         <AppShell
@@ -17,7 +21,7 @@ export default function App() {
             }}
             padding="md"
         >
-            <AppShell.Header>
+            <AppShell.Header style={{ background: isConnected ? 'var(--mantine-color-green-5)' : 'white' }}>
                 <Group justify='space-between'>
 
                     <Burger
@@ -25,12 +29,12 @@ export default function App() {
                         size="sm"
                     />
                     <div>Modbus Explorer</div>
-                    <div> </div>
+                    <div></div>
                 </Group>
             </AppShell.Header>
 
             <AppShell.Navbar p="md">
-                <ConnectForm />
+                <ConnectForm connected={isConnected} />
             </AppShell.Navbar>
 
             <AppShell.Main>

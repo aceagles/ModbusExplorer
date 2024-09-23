@@ -13,3 +13,7 @@ export function Disconnect() {
 export function Read(arg1, arg2, arg3) {
   return window['go']['main']['App']['Read'](arg1, arg2, arg3);
 }
+
+export function SetConnected(arg1) {
+  return window['go']['main']['App']['SetConnected'](arg1);
+}

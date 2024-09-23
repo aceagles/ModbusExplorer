@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/simonvetter/modbus"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -38,10 +39,10 @@ func (a *App) Connect(ip string, port int, unitID int) error {
 	a.client = client
 	err = client.Open()
 	if err != nil {
-		a.connected = false
+		a.SetConnected(false)
 		return err
 	}
-	a.connected = true
+	a.SetConnected(true)
 	fmt.Println("Connected")
 	return nil
 }
@@ -49,7 +50,7 @@ func (a *App) Connect(ip string, port int, unitID int) error {
 func (a *App) Disconnect() {
 	if a.connected {
 		a.client.Close()
-		a.connected = false
+		a.SetConnected(false)
 	}
 }
 
@@ -58,7 +59,15 @@ type modbusData struct {
 	Value   uint16
 }
 
+func (a *App) SetConnected(isConnected bool) {
+	a.connected = isConnected
+	runtime.EventsEmit(a.ctx, "setConnected", isConnected)
+}
+
 func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusData, error) {
+	if !a.connected {
+		return nil, fmt.Errorf("Not connected.")
+	}
 	var regType modbus.RegType
 	switch inputType {
 	case "Input Register":
@@ -71,6 +80,7 @@ func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusD
 	results, err := a.client.ReadRegisters(address, quantity, regType)
 	fmt.Println(results)
 	if err != nil {
+		a.SetConnected(false)
 		return nil, err
 	}
 	var returndata []modbusData

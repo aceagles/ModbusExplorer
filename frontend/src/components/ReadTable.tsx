@@ -1,9 +1,10 @@
-import { Menu, Stack, Container, Group, NumberInput, Select, Table, ActionIcon } from "@mantine/core";
+import { Text, Menu, Stack, Container, Group, NumberInput, Select, Table, ActionIcon } from "@mantine/core";
 import { IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
 type modbusData = main.modbusData;
+
 enum dataTypes {
   BIN = "BIN",
   U16 = "U16",
@@ -17,11 +18,26 @@ export function ReadTable() {
   // rawData array of modbusData
   const [rawData, setRawData] = useState<modbusData[]>([]);
   const [typeArray, setTypeArray] = useState<dataTypes[]>(Array(rawData.length).fill(dataTypes.U16));
+  const [error, setError] = useState<string>('')
+
+  // Form data TODO: replace with mantine form handler
+  const [address, setAddress] = useState<string | number>('');
+  const [quantity, setQuantity] = useState<string | number>('');
+  const [type, setReadType] = useState<string>("Holding Register");
+
+  // Update the array of data types whenever the number of fields returned changes.
+  // This means they are retained when repeatedly getting data but enough are added when
+  // new data comes through
   useEffect(() => {
     setTypeArray(Array(rawData.length).fill(dataTypes.U16));
   }, [rawData.length]);
+
+  // Copy of raw data as getting the typed data consumes the array.
   const rawDataCopy = [...rawData];
-  const typedData: ({address: number, value: any} | undefined)[] = typeArray.map((type, i) => {
+  const typedData: ({ address: number, value: any } | undefined)[] = typeArray.map((type, i) => {
+    // Iterate through the array of data types and convert respectively.
+    // Consumes the array since there will be a different number of output elements depending
+    // on the data types selected
     switch (type) {
       case dataTypes.BIN:
         {
@@ -38,7 +54,7 @@ export function ReadTable() {
         {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
-            return { address: val1!.Address, value: val1!.Value << 16+ (val2!.Value) };
+          return { address: val1!.Address, value: (val1!.Value << 16) + val2!.Value };
         }
       case dataTypes.I16:
         {
@@ -54,7 +70,7 @@ export function ReadTable() {
           const val2 = rawDataCopy.shift();
           const combinedValue = (val1!.Value << 16) + val2!.Value;
           const signedValue = combinedValue > 0x7FFFFFFF ? combinedValue - 0x100000000 : combinedValue;
-          return { address: val1!.Address, value: (val1!.Value << 16) + val2!.Value - 0x100000000 };
+          return { address: val1!.Address, value: signedValue };
         }
       case dataTypes.F32:
         {
@@ -64,12 +80,15 @@ export function ReadTable() {
         }
     }
   });
-  
+
+  // Sets an index to an array type. Needs to also handle removing or re-adding the following element
+  // depending on the number of registers the type requires
   function setType(i: number, type: dataTypes) {
     if (typeArray[i] === type) {
       return
-    } 
+    }
     switch (type) {
+      // 16 bit types
       case dataTypes.BIN:
       case dataTypes.I16:
       case dataTypes.U16:
@@ -82,6 +101,7 @@ export function ReadTable() {
           return [...prev];
         });
         break;
+      // 32 bit types
       case dataTypes.I32:
       case dataTypes.U32:
       case dataTypes.F32:
@@ -92,76 +112,82 @@ export function ReadTable() {
         setTypeArray((prev) => {
           let previousType = prev[i];
           prev[i] = type;
+          // if previous type was 16 bit
           if (previousType === dataTypes.U16 || previousType === dataTypes.I16 || previousType === dataTypes.BIN) {
+            // if next type in a rray is 32 bit then convert it back to 16 bit as the first register has just been nicked
             if (prev[i + 1] === dataTypes.U32 || prev[i + 1] === dataTypes.I32 || prev[i + 1] === dataTypes.F32) {
               prev[i + 1] = dataTypes.U16;
             } else {
-            prev.splice(i + 1, 1);
+              prev.splice(i + 1, 1);
             }
           }
-          return [...prev];});
+          return [...prev];
+        });
         break;
+    }
   }
-} 
-  const [address, setAddress] = useState<string | number>('');
-  const [quantity, setQuantity] = useState<string | number>('');
-  const [type, setReadType] = useState<string>("Holding Register");
+
+  // Call the read function from the go backend
   function ReadModbus() {
     Read(type, address as number, quantity as number)
       .then((data) => {
-        console.log(data);
         setRawData(data);
+        setError('')
       })
       .catch((err) => {
-        console.error(err);
+        setError(err)
       });
   }
+
+  let content = error ? (<Text>{error}</Text>) : (
+    <Table withTableBorder withColumnBorders withRowBorders={false}>
+      <Table.Thead>
+        <Table.Tr>
+          {
+            typedData.map((v, i) => (<Table.Th key={"address" + i}>{v!.address}</Table.Th>))
+          }
+        </Table.Tr>
+      </Table.Thead>
+      <Table.Tbody>
+        <Table.Tr>
+          {
+            typedData.map((v, i) => (<Table.Td key={"Value" + i}>{v!.value}</Table.Td>))
+          }
+        </Table.Tr>
+        <Table.Tr>
+          {
+            typeArray.map((v, i) => (<Table.Td key={"type" + i} ><TypeSelector v={v} updateType={(s) => setType(i, s)} /></Table.Td>))
+          }
+        </Table.Tr>
+      </Table.Tbody>
+    </Table>
+  )
 
   return (
     <Container>
       <Stack>
         <Group justify="">
           <NumberInput placeholder="Start Register" size="xs"
-            radius="xs" onChange={setAddress}/>
+            radius="xs" onChange={setAddress} />
           <NumberInput placeholder="Quantity" size="xs"
-            radius="xs" onChange={setQuantity}/>
+            radius="xs" onChange={setQuantity} />
           <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} placeholder="Type" size="xs"
-            radius="xs" onChange={value => setReadType(value!)}/>
+            radius="xs" onChange={value => setReadType(value!)} />
           <ActionIcon onClick={ReadModbus} variant="default" p={"2px"}>
             <IconRefresh />
           </ActionIcon>
         </Group>
-        <Table withTableBorder withColumnBorders withRowBorders={false}>
-          <Table.Thead>
-            <Table.Tr>
-              {
-                typedData.map((v, i) => (<Table.Th key={"address"+i}>{v!.address}</Table.Th>))
-              }
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            <Table.Tr>
-              {
-                typedData.map((v, i) => (<Table.Td key={"Value"+i}>{v!.value}</Table.Td>))
-              }
-            </Table.Tr>
-            <Table.Tr>
-              {
-                typeArray.map((v, i) => (<Table.Td key={"type"+i} ><TypeSelector v={v} updateType={(s) => setType(i, s) }/></Table.Td>))
-              }
-              </Table.Tr> 
-          </Table.Tbody>
-        </Table>
+        {content}
       </Stack>
     </Container>
   );
 }
 
-function TypeSelector(props: {v: string, updateType: (type: dataTypes) => void}) {
+function TypeSelector(props: { v: string, updateType: (type: dataTypes) => void }) {
   return (
     <Menu shadow="md" width={80}>
       <Menu.Target>
-        <ActionIcon  onClick={() => {}} variant="default" p={"2px"}>{props.v}</ActionIcon>
+        <ActionIcon onClick={() => { }} variant="default" p={"2px"}>{props.v}</ActionIcon>
       </Menu.Target>
 
       <Menu.Dropdown>
