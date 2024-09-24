@@ -132,6 +132,9 @@ export function ReadTable() {
   function ReadModbus() {
     Read(type, address as number, quantity as number)
       .then((data) => {
+        if (data.length < rawData.length) {
+          setTypeArray(Array(data.length).fill(dataTypes.U16));
+        }
         setRawData(data);
         setError('')
       })
