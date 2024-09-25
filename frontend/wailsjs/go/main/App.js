@@ -17,3 +17,7 @@ export function Read(arg1, arg2, arg3) {
 export function SetConnected(arg1) {
   return window['go']['main']['App']['SetConnected'](arg1);
 }
+
+export function Write(arg1, arg2, arg3) {
+  return window['go']['main']['App']['Write'](arg1, arg2, arg3);
+}

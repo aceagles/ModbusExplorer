@@ -93,3 +93,12 @@ func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusD
 
 	return returndata, nil
 }
+
+func (a *App) Write(inputType string, address uint16, value []uint16) error {
+
+	if !a.connected {
+		return fmt.Errorf("Not connected.")
+	}
+	fmt.Println(address, value)
+	return a.client.WriteRegisters(address, value)
+}

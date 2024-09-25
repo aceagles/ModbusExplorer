@@ -1,11 +1,12 @@
-import { Text, Menu, Stack, Container, Group, NumberInput, Select, Table, ActionIcon } from "@mantine/core";
+import { Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider } from "@mantine/core";
 import { IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
+import { TypeSelector } from "./TypeSelector";
 type modbusData = main.modbusData;
 
-enum dataTypes {
+export enum dataTypes {
   BIN = "BIN",
   U16 = "U16",
   U32 = "U32",
@@ -38,6 +39,7 @@ export function ReadTable() {
     // Iterate through the array of data types and convert respectively.
     // Consumes the array since there will be a different number of output elements depending
     // on the data types selected
+    if (rawDataCopy.length == 0) return { address: 0, value: 0 };
     switch (type) {
       case dataTypes.BIN:
         {
@@ -140,27 +142,29 @@ export function ReadTable() {
   }
 
   let content = error ? (<Text>{error}</Text>) : (
-    <Table withTableBorder withColumnBorders withRowBorders={false}>
-      <Table.Thead>
-        <Table.Tr>
-          {
-            typedData.map((v, i) => (<Table.Th key={"address" + i}>{v!.address}</Table.Th>))
-          }
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        <Table.Tr>
-          {
-            typedData.map((v, i) => (<Table.Td key={"Value" + i}>{v!.value}</Table.Td>))
-          }
-        </Table.Tr>
-        <Table.Tr>
-          {
-            typeArray.map((v, i) => (<Table.Td key={"type" + i} ><TypeSelector v={v} updateType={(s) => setType(i, s)} /></Table.Td>))
-          }
-        </Table.Tr>
-      </Table.Tbody>
-    </Table>
+    <Group>
+      {
+        typedData.length > 0 &&
+        <Stack gap="xs">
+          <Text>Register:</Text>
+          <Text>Value:</Text>
+          <Text>Type:</Text>
+        </Stack>
+      }
+      {
+        typedData.map((v, i) => (
+          <>
+            <Stack gap="xs"
+            >
+              <strong>{v!.address} <br /></strong>
+              <Text>{v!.value} <br /></Text>
+              <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)} />
+            </Stack>
+            <Divider orientation="vertical" />
+          </>
+        ))
+      }
+    </Group>
   )
 
   return (
@@ -183,20 +187,4 @@ export function ReadTable() {
   );
 }
 
-function TypeSelector(props: { v: string, updateType: (type: dataTypes) => void }) {
-  return (
-    <Menu shadow="md" width={80}>
-      <Menu.Target>
-        <ActionIcon onClick={() => { }} variant="default" p={"2px"}>{props.v}</ActionIcon>
-      </Menu.Target>
 
-      <Menu.Dropdown>
-        {Object.values(dataTypes).map((type) => (
-          <Menu.Item key={"Types" + type} onClick={() => props.updateType(type)}>
-            {type}
-          </Menu.Item>
-        ))}
-      </Menu.Dropdown>
-    </Menu>
-  )
-}
