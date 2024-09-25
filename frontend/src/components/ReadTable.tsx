@@ -56,7 +56,7 @@ export function ReadTable() {
         {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
-          return { address: val1!.Address, value: (val1!.Value << 16) + val2!.Value };
+          return { address: val1!.Address, value: ((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0) };
         }
       case dataTypes.I16:
         {
@@ -78,7 +78,8 @@ export function ReadTable() {
         {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
-          return { address: val1!.Address, value: new Float32Array(new Uint16Array([val1!.Value, val2!.Value]).buffer)[0] };
+          const u32 = new Uint32Array([((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0)])
+          return { address: val1!.Address, value: new Float32Array(u32.buffer)[0] };
         }
     }
   });
@@ -133,6 +134,9 @@ export function ReadTable() {
   function ReadModbus() {
     Read(type, address as number, quantity as number)
       .then((data) => {
+        if (data.length < rawData.length) {
+          setTypeArray(Array(data.length).fill(dataTypes.U16));
+        }
         setRawData(data);
         setError('')
       })

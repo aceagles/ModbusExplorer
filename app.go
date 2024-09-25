@@ -66,7 +66,11 @@ func (a *App) SetConnected(isConnected bool) {
 
 func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusData, error) {
 	if !a.connected {
-		return nil, fmt.Errorf("Not connected.")
+		err := a.client.Open()
+		if err != nil {
+			return nil, err
+		}
+		a.SetConnected(true)
 	}
 	var regType modbus.RegType
 	switch inputType {
