@@ -2,8 +2,8 @@ name: Wails build
 
 on:
   push:
-  workflow_dispatch:
-
+    tags:
+      - "*"
 env:
   # Necessary for most environments as build failure can occur due to OOM issues
   NODE_OPTIONS: "--max-old-space-size=4096"
@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - name: "App"
+          - name: "ModbusExplorer-ubuntu22"
             platform: "linux/amd64"
             os: "ubuntu-latest"
-          - name: "App"
+          - name: "ModbusExplorer.exe"
             platform: "windows/amd64"
             os: "windows-latest"
           # - name: 'App'
@@ -64,4 +64,21 @@ jobs:
         with:
           node-version: "20"
       - name: Build Wails application
-        run: wails build -tags webkit2_41
+        run: wails build -tags webkit2_41 -o ModbusExplorer-ubuntu24
+
+      - name: Add Linux perms
+        working-directory: .
+        run: chmod +x build/bin/*
+        shell: bash
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Wails Build ${{runner.os}} ${{inputs.build-name}}
+          path: |
+            */bin/
+            *\bin\*
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: inputs.package == 'true' && startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            */bin/*
