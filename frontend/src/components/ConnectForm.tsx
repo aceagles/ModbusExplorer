@@ -1,6 +1,7 @@
 import { Button, NumberInput, TextInput } from "@mantine/core";
 import { Connect, Disconnect } from "../../wailsjs/go/main/App";
 import { useState } from "react";
+import { notifications } from "@mantine/notifications";
 
 export default function ConnectForm(props: { connected: boolean }) {
   const [IP, setIP] = useState<string>("");
@@ -9,7 +10,16 @@ export default function ConnectForm(props: { connected: boolean }) {
   function ConnectModbus() {
     console.log("Connecting to", IP, port, unitID);
     let portNum = port as number;
-    Connect(IP, portNum, unitID);
+    Connect(IP, portNum, unitID)
+      .then(() => notifications.show({
+        title: "Connected",
+        message: ""
+      }))
+      .catch((err) => notifications.show({
+        title: "Failed to Connect",
+        message: err,
+        autoClose: 20000
+      }))
   }
   return (
     <>

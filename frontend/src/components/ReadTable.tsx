@@ -1,9 +1,10 @@
-import { Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider } from "@mantine/core";
+import { Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider } from "@mantine/core";
 import { IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
 import { TypeSelector } from "./TypeSelector";
+import { notifications } from "@mantine/notifications";
 type modbusData = main.modbusData;
 
 export enum dataTypes {
@@ -142,6 +143,10 @@ export function ReadTable() {
       })
       .catch((err) => {
         setError(err)
+        notifications.show({
+          title: "Failed to Read",
+          message: err
+        })
       });
   }
 
@@ -157,7 +162,7 @@ export function ReadTable() {
       }
       {
         typedData.map((v, i) => (
-          <>
+          <Box>
             <Stack gap="xs"
             >
               <strong>{v!.address} <br /></strong>
@@ -165,29 +170,32 @@ export function ReadTable() {
               <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)} />
             </Stack>
             <Divider orientation="vertical" />
-          </>
+          </Box>
         ))
       }
     </Group>
   )
 
   return (
-    <Container>
+    <Group justify="space-between">
+      <Box ><Text fw={700}>Read</Text></Box>
       <Stack>
         <Group justify="">
-          <NumberInput placeholder="Start Register" size="xs"
+          <NumberInput label="Start Register:" min={0} placeholder="Start Register" size="xs"
             radius="xs" onChange={setAddress} />
-          <NumberInput placeholder="Quantity" size="xs"
+          <NumberInput placeholder="Quantity" label="Quantity:" size="xs" min={1} max={125}
             radius="xs" onChange={setQuantity} />
-          <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} placeholder="Type" size="xs"
+          <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value="Holding Register" size="xs" label="Register Type"
             radius="xs" onChange={value => setReadType(value!)} />
+          <br />
           <ActionIcon onClick={ReadModbus} variant="default" p={"2px"}>
             <IconRefresh />
           </ActionIcon>
         </Group>
         {content}
       </Stack>
-    </Container>
+      <div></div>
+    </Group>
   );
 }
 

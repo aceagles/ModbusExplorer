@@ -1,11 +1,11 @@
-import { Menu, ActionIcon } from "@mantine/core";
+import { Menu, Button } from "@mantine/core";
 import { dataTypes } from "./ReadTable";
 
 export function TypeSelector(props: { v: string; updateType: (type: dataTypes) => void; }) {
   return (
     <Menu shadow="md" width={80}>
       <Menu.Target>
-        <ActionIcon onClick={() => { }} variant="default" p={"2px"}>{props.v}</ActionIcon>
+        <Button onClick={() => { }} variant="default" radius="xs" size="xs" p={"2px"}>{props.v}</Button>
       </Menu.Target>
 
       <Menu.Dropdown>

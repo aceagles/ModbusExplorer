@@ -1,9 +1,10 @@
-import { Select, ActionIcon, Container, Group, NumberInput, Text } from "@mantine/core";
+import { Stack, Box, Select, ActionIcon, Container, Group, NumberInput, Text } from "@mantine/core";
 import { TypeSelector } from "./TypeSelector";
 import { dataTypes } from "./ReadTable";
 import { IconArrowUp } from "@tabler/icons-react";
 import { useState } from "react";
 import { Write } from "../../wailsjs/go/main/App";
+import { notifications } from "@mantine/notifications";
 
 export function WriteTable() {
   const [dataType, setDataType] = useState<dataTypes>(dataTypes.U16)
@@ -34,21 +35,37 @@ export function WriteTable() {
     }
     setWriteData(dataToWrite)
     Write(dataType, address as number, dataToWrite)
+      .then(() => notifications.show({
+        title: "Registers Written",
+        message: ""
+      }))
+      .catch((err) => notifications.show({
+        title: "Failed to write.",
+        message: err,
+        autoClose: 20000,
+      }))
   }
   return (
-    <Container bg="gray.1">
-      <Text>Write Table</Text>
-      <Group>
-        <NumberInput placeholder="Register" size="xs" value={address} onChange={setAddress} />
-        <NumberInput placeholder="Value" size="xs" onChange={setWriteValue} />
-        <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }} />
-        <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} placeholder="Type" size="xs"
-          radius="xs" onChange={() => { }} />
-        <ActionIcon variant="default" onClick={setWrite}>
-          <IconArrowUp />
-        </ActionIcon>
+    <div>
+      <Group justify="space-between">
+        <Box ><Text fw={700}>Write</Text></Box>
+        <Stack>
+          <Group>
+            <NumberInput placeholder="Register" size="xs" value={address} onChange={setAddress} />
+            <NumberInput placeholder="Value" size="xs" onChange={setWriteValue} />
+            <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }} />
+            <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} placeholder="Type" size="xs"
+              radius="xs" onChange={() => { }} />
+            <ActionIcon variant="default" onClick={setWrite}>
+              <IconArrowUp />
+            </ActionIcon>
+          </Group>
+          {
+            writeData.length > 0 && <Text>Raw Data : {JSON.stringify(writeData)}</Text>
+          }
+        </Stack>
+        <div> </div>
       </Group>
-      {JSON.stringify(writeData)}
-    </Container>
+    </div >
   );
 }
