@@ -18,7 +18,7 @@ func main() {
 
 	// Start the server
 	go func() {
-		err := server.ListenTCP("localhost:502")
+		err := server.ListenTCP("0.0.0.0:502")
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
