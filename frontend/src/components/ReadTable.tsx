@@ -157,7 +157,10 @@ export function ReadTable() {
         <Stack gap="xs">
           <Text>Register:</Text>
           <Text>Value:</Text>
-          <Text>Type:</Text>
+          {
+            (type == "Holding Register" || type == "Input Register") &&
+            <Text>Type:</Text>
+          }
         </Stack>
       }
       {
@@ -167,7 +170,10 @@ export function ReadTable() {
             >
               <strong>{v!.address} <br /></strong>
               <Text>{v!.value} <br /></Text>
-              <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)} />
+              {
+                (type == "Holding Register" || type == "Input Register") &&
+                <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)} />
+              }
             </Stack>
             <Divider orientation="vertical" />
           </Box>
@@ -185,8 +191,8 @@ export function ReadTable() {
             radius="xs" onChange={setAddress} />
           <NumberInput placeholder="Quantity" label="Quantity:" size="xs" min={1} max={125}
             radius="xs" onChange={setQuantity} />
-          <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value="Holding Register" size="xs" label="Register Type"
-            radius="xs" onChange={value => setReadType(value!)} />
+          <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value={type} size="xs" label="Register Type"
+            radius="xs" onChange={value => { setReadType(value!); setRawData([]) }} />
           <br />
           <ActionIcon onClick={ReadModbus} variant="default" p={"2px"}>
             <IconRefresh />

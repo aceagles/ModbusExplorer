@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -73,16 +74,33 @@ func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusD
 		a.SetConnected(true)
 	}
 	var regType modbus.RegType
+	var results []uint16
+	var err error
 	switch inputType {
-	case "Input Register":
-		regType = modbus.INPUT_REGISTER
-	case "Holding Register":
-		regType = modbus.HOLDING_REGISTER
+	case "Discrete Input", "Coil":
+		var boolResult []bool
+		if inputType == "Discrete Input" {
+			boolResult, err = a.client.ReadDiscreteInputs(address, quantity)
+		} else {
+			boolResult, err = a.client.ReadCoils(address, quantity)
+		}
+		for _, v := range boolResult {
+			var intVal uint16
+			if v {
+				intVal = 1
+			}
+			results = append(results, intVal)
+		}
+	case "Input Register", "Holding Register":
+		if inputType == "Input Register" {
+			regType = modbus.INPUT_REGISTER
+		} else {
+			regType = modbus.HOLDING_REGISTER
+		}
+		results, err = a.client.ReadRegisters(address, quantity, regType)
 	default:
 		return nil, fmt.Errorf("Invalid input type: %s", inputType)
 	}
-	results, err := a.client.ReadRegisters(address, quantity, regType)
-	fmt.Println(results)
 	if err != nil {
 		a.SetConnected(false)
 		return nil, err
@@ -99,10 +117,13 @@ func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusD
 }
 
 func (a *App) Write(inputType string, address uint16, value []uint16) error {
-
 	if !a.connected {
 		return fmt.Errorf("Not connected.")
 	}
-	fmt.Println(address, value)
-	return a.client.WriteRegisters(address, value)
+	if inputType == "Holding Register" {
+		return a.client.WriteRegisters(address, value)
+	} else if inputType == "Coil" {
+		return a.client.WriteCoil(address, value[0] > 0)
+	}
+	return errors.New("Invalid register type")
 }
