@@ -13,6 +13,21 @@ env:
 
 jobs:
   build:
+    strategy:
+      # Failure in one platform build won't impact the others
+      fail-fast: false
+      matrix:
+        build:
+          - name: "App"
+            platform: "linux/amd64"
+            os: "ubuntu-24.04"
+          - name: "App"
+            platform: "windows/amd64"
+            os: "windows-latest"
+          # - name: 'App'
+          #   platform:  'darwin/universal'
+          #   os: 'macos-latest'
+
     runs-on: ${{ matrix.build.os }}
     steps:
       - name: Checkout
