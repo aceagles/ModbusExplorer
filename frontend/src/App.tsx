@@ -1,9 +1,10 @@
-import { AppShell, Burger, Group } from '@mantine/core';
+import { Title, Tooltip, AppShell, Burger, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import ConnectForm from './components/ConnectForm';
 import ReadsView from './components/ReadsView';
 import { EventsOn } from '../wailsjs/runtime'
 import { useEffect, useState } from 'react';
+import { IconCircle, IconCircleFilled } from '@tabler/icons-react';
 
 export default function App() {
     const [opened, { toggle }] = useDisclosure();
@@ -12,7 +13,7 @@ export default function App() {
 
     return (
         <AppShell
-            header={{ height: 30 }}
+            header={{ height: 40 }}
             navbar={{
                 width: 300,
                 breakpoint: "sm",
@@ -21,15 +22,25 @@ export default function App() {
             }}
             padding="md"
         >
-            <AppShell.Header style={{ background: isConnected ? 'var(--mantine-color-green-5)' : 'white' }}>
+            <AppShell.Header >
                 <Group justify='space-between'>
 
                     <Burger
                         onClick={toggle}
                         size="sm"
                     />
-                    <div>Modbus Explorer</div>
-                    <div></div>
+                    <Title order={3}>Modbus Explorer</Title>
+                    <div>
+                        {isConnected ?
+                            <Tooltip label="Connected">
+                                <IconCircleFilled color='green' size={"35px"} />
+                            </Tooltip>
+                            :
+                            <Tooltip label="Disconnected">
+                                <IconCircle size={"35px"} />
+                            </Tooltip>
+                        }
+                    </div>
                 </Group>
             </AppShell.Header>
 

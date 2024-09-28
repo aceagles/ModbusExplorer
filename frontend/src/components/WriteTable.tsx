@@ -57,31 +57,30 @@ export function WriteTable() {
   }
   return (
     <div>
-      <Group justify="space-between">
-        <Box ><Text fw={700}>Write</Text></Box>
-        <Stack>
-          <Group>
-            <NumberInput placeholder="Register" size="xs" value={address} onChange={setAddress} />
-            {regType == "Holding Register" ?
-              <NumberInput value={writeValue} placeholder="Value" size="xs" onChange={setWriteValue} />
-              :
-              <Switch
-                checked={writeValue != '' && writeValue as number > 0}
-                onChange={(event) => setWriteValue(event.currentTarget.checked ? 1 : 0)}
-              />}
-            <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }} />
-            <Select data={["Holding Register", "Coil"]} placeholder="Type" size="xs"
-              radius="xs" onChange={(value) => setRegType(value!)} value={regType} />
-            <ActionIcon variant="default" onClick={setWrite}>
-              <IconArrowUp />
-            </ActionIcon>
-          </Group>
+      <Stack>
+        <Group>
+          <NumberInput placeholder="Register" size="xs" value={address} onChange={setAddress} />
+          {regType == "Holding Register" ?
+            <NumberInput value={writeValue} placeholder="Value" size="xs" onChange={setWriteValue} />
+            :
+            <Switch
+              checked={writeValue != '' && writeValue as number > 0}
+              onChange={(event) => setWriteValue(event.currentTarget.checked ? 1 : 0)}
+            />}
           {
-            writeData.length > 0 && <Text>Raw Data : {JSON.stringify(writeData)}</Text>
+            regType == "Holding Register" &&
+            <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }} />
           }
-        </Stack>
-        <div> </div>
-      </Group>
+          <Select data={["Holding Register", "Coil"]} placeholder="Type" size="xs"
+            radius="xs" onChange={(value) => setRegType(value!)} value={regType} />
+          <ActionIcon variant="default" onClick={setWrite}>
+            <IconArrowUp />
+          </ActionIcon>
+        </Group>
+        {
+          writeData.length > 0 && <Text>Raw Data : {JSON.stringify(writeData)}</Text>
+        }
+      </Stack>
     </div >
   );
 }

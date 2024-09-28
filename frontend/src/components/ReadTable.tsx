@@ -1,5 +1,5 @@
-import { Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider } from "@mantine/core";
-import { IconRefresh } from "@tabler/icons-react";
+import { Menu, Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider, Button } from "@mantine/core";
+import { IconCaretDownFilled, IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
@@ -110,7 +110,6 @@ export function ReadTable() {
       case dataTypes.U32:
       case dataTypes.F32:
         if (i >= typeArray.length - 1) {
-          console.log("Not enough data points");
           return;
         }
         setTypeArray((prev) => {
@@ -133,6 +132,7 @@ export function ReadTable() {
 
   // Call the read function from the go backend
   function ReadModbus() {
+    console.log("Reading")
     Read(type, address as number, quantity as number)
       .then((data) => {
         if (data.length < rawData.length) {
@@ -165,7 +165,7 @@ export function ReadTable() {
       }
       {
         typedData.map((v, i) => (
-          <Box>
+          <Group>
             <Stack gap="xs"
             >
               <strong>{v!.address} <br /></strong>
@@ -176,33 +176,82 @@ export function ReadTable() {
               }
             </Stack>
             <Divider orientation="vertical" />
-          </Box>
+          </Group>
         ))
       }
     </Group>
   )
 
+  const [refreshRate, setRefreshRate] = useState<string>("None")
+  const [opened, setOpened] = useState(false);
+
+  useEffect(() => {
+    // Don't auto fetch if set to none or the menu is open
+    if (refreshRate == "None" || opened) return;
+    let refresh = 0
+    switch (refreshRate) {
+      case "1s":
+        refresh = 1000;
+        break
+      case "2s":
+        refresh = 2000;
+        break
+      case "5s":
+        refresh = 5000;
+        break
+      case "10s":
+        refresh = 10000;
+        break
+      case "30s":
+        refresh = 30000;
+        break
+    }
+    const interval = setInterval(ReadModbus, refresh)
+    return () => clearInterval(interval)
+  }, [refreshRate, address, quantity, opened]) // Needs to depend on all of these or ReadModbus will become out of date compared to the inputs 
+
+
   return (
-    <Group justify="space-between">
-      <Box ><Text fw={700}>Read</Text></Box>
-      <Stack>
-        <Group justify="">
-          <NumberInput label="Start Register:" min={0} placeholder="Start Register" size="xs"
-            radius="xs" onChange={setAddress} />
-          <NumberInput placeholder="Quantity" label="Quantity:" size="xs" min={1} max={125}
-            radius="xs" onChange={setQuantity} />
-          <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value={type} size="xs" label="Register Type"
-            radius="xs" onChange={value => { setReadType(value!); setRawData([]) }} />
-          <br />
-          <ActionIcon onClick={ReadModbus} variant="default" p={"2px"}>
-            <IconRefresh />
-          </ActionIcon>
-        </Group>
-        {content}
-      </Stack>
-      <div></div>
-    </Group>
+    <Stack>
+      <Group justify="">
+        <NumberInput label="Start Register:" min={0} placeholder="Start Register" size="xs"
+          radius="xs" onChange={setAddress} />
+        <NumberInput placeholder="Quantity" label="Quantity:" size="xs" min={1} max={125}
+          radius="xs" onChange={setQuantity} />
+        <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value={type} size="xs" label="Register Type"
+          radius="xs" onChange={value => { setReadType(value!); setRawData([]) }} />
+        <br />
+        <RefreshSelector opened={opened} setOpened={setOpened} refreshRate={refreshRate} setRate={setRefreshRate} ReadModbus={ReadModbus} />
+      </Group>
+      {content}
+    </Stack>
   );
+
+  function RefreshSelector(props: { opened: boolean, setOpened: (b: boolean) => void, setRate: (rate: string) => void, refreshRate: string, ReadModbus: () => void }) {
+    return (
+      <div>
+        <Button size="xs" onClick={props.ReadModbus} variant="default" p={"2px"} style={{ borderBottomRightRadius: 0, borderTopRightRadius: 0, borderRight: "0px" }}>
+          <IconRefresh />
+        </Button>
+        <Menu shadow="md" width={80} opened={props.opened} onChange={props.setOpened}>
+          <Menu.Target>
+            <Button size="xs" variant="default" style={{ borderBottomLeftRadius: 0, borderTopLeftRadius: 0, borderLeft: "0px" }}>
+              {
+                props.refreshRate == "None" ?
+                  <IconCaretDownFilled /> : <Text>{props.refreshRate}</Text>
+              }
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>Refresh Rate</Menu.Label>
+            {
+              ["None", "1s", "5s", "10s", "30s"].map((v) => (
+                <Menu.Item onClick={() => props.setRate(v)}>{v}</Menu.Item>
+              ))
+            }
+          </Menu.Dropdown>
+        </Menu>
+      </div>
+    )
+  }
 }
-
-

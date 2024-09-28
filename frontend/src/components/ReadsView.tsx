@@ -1,12 +1,12 @@
 import { useState } from "react"
-import { Box, Button, Text, Stack, Group, Divider } from "@mantine/core"
+import { Box, Button, Text, Stack, Group, Divider, ActionIcon } from "@mantine/core"
 import { ReadTable } from "./ReadTable"
-import { IconCirclePlus } from "@tabler/icons-react"
+import { IconCirclePlus, IconCross, IconX } from "@tabler/icons-react"
 import { WriteTable } from "./WriteTable"
 
 enum tableType {
-  read = 1,
-  write
+  read = "Read",
+  write = "Write"
 }
 
 interface table {
@@ -18,13 +18,23 @@ export default function ReadsView() {
   const [idCount, setIdCount] = useState<number>(1)
   const [tables, setTables] = useState<table[]>([{ type: tableType.read, id: 1 }])
 
-  const tableComponents = tables.map(v => (
+  const tableComponents = tables.map((v, i) => (
     <>
-      {v.type == tableType.read ?
-        <ReadTable key={v.id + " " + v.type} />
-        :
-        <WriteTable key={v.id + " " + v.type} />
-      }
+
+      <Group justify="space-between">
+        <Group >
+          <Text fw={700}>{v.type}</Text>
+          <ActionIcon color="gray" variant="subtle" size="s" radius="xl" aria-label="Settings" onClick={() => setTables(table => { table.splice(i, 1); return [...table] })}>
+            <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+          </ActionIcon>
+        </Group>
+        {v.type == tableType.read ?
+          <ReadTable key={v.id + " " + v.type} />
+          :
+          <WriteTable key={v.id + " " + v.type} />
+        }
+        <div></div>
+      </Group>
       <Divider />
     </>
   ))

@@ -66,6 +66,9 @@ func (a *App) SetConnected(isConnected bool) {
 }
 
 func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusData, error) {
+	if a.client == nil {
+		return nil, errors.New("Client is not configured.")
+	}
 	if !a.connected {
 		err := a.client.Open()
 		if err != nil {
