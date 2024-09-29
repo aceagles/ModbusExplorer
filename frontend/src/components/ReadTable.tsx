@@ -46,7 +46,9 @@ export function ReadTable() {
         {
           const val = rawDataCopy.shift();
           // Convert to binary showing leading zeros
-          return { address: val!.Address, value: val!.Value.toString(2).padStart(16, '0') };
+          const stringVal = val!.Value.toString(2).padStart(16, '0')
+          const strings = stringVal.match(/.{1,4}/g)
+          return { address: val!.Address, value: strings?.join(' ') };
         }
       case dataTypes.U16:
         {

@@ -16,7 +16,7 @@ export function ResultDisplay({ typedData, typeArray, type, setType }: { typedDa
           <Stack gap="xs"
           >
             <strong>{v!.address} </strong>
-            <div><Text size="lg">{JSON.stringify(v!.value)}</Text>
+            <div><Text size="lg">{v!.value}</Text>
               {(type == "Holding Register" || type == "Input Register") &&
                 <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)}>
                   <Text size="xs" c="gray.5" style={{ cursor: "pointer" }}>{typeArray[i]}</Text>
