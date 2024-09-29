@@ -1,4 +1,4 @@
-import { Switch, Stack, Box, Select, ActionIcon, Container, Group, NumberInput, Text } from "@mantine/core";
+import { Button, Switch, Stack, Box, Select, ActionIcon, Container, Group, NumberInput, Text } from "@mantine/core";
 import { TypeSelector } from "./TypeSelector";
 import { dataTypes } from "./ReadTable";
 import { IconArrowUp } from "@tabler/icons-react";
@@ -13,7 +13,14 @@ export function WriteTable() {
   const [writeValue, setWriteValue] = useState<number | string>(0)
   const [regType, setRegType] = useState<string>("Holding Register")
   function setWrite() {
-
+    if (address == "") {
+      notifications.show({
+        title: "Failed to Write",
+        message: "Set an address.",
+        autoClose: 20000,
+      })
+      return
+    }
     let dataToWrite: number[] = []
     if (regType == "Coil") {
       if (writeValue == "") {
@@ -69,7 +76,9 @@ export function WriteTable() {
             />}
           {
             regType == "Holding Register" &&
-            <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }} />
+            <TypeSelector v={dataType} updateType={(v) => { setDataType(v) }}>
+              <Button onClick={() => { }} variant="default" radius="xs" size="xs" p={"2px"}>{dataType}</Button>
+            </TypeSelector>
           }
           <Select data={["Holding Register", "Coil"]} placeholder="Type" size="xs"
             radius="xs" onChange={(value) => setRegType(value!)} value={regType} />

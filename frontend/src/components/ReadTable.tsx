@@ -132,6 +132,11 @@ export function ReadTable() {
 
   // Call the read function from the go backend
   function ReadModbus() {
+    if (address === "" || quantity === "") {
+      setError("Enter an address and quantity.")
+      setRefreshRate("None")
+      return
+    }
     Read(type, address as number, quantity as number)
       .then((data) => {
         if (data.length < rawData.length) {
@@ -157,10 +162,6 @@ export function ReadTable() {
         <Stack gap="xs">
           <Text>Register:</Text>
           <Text>Value:</Text>
-          {
-            (type == "Holding Register" || type == "Input Register") &&
-            <Text>Type:</Text>
-          }
         </Stack>
       }
       {
@@ -168,12 +169,14 @@ export function ReadTable() {
           <Group>
             <Stack gap="xs"
             >
-              <strong>{v!.address} <br /></strong>
-              <Text>{v!.value} <br /></Text>
-              {
-                (type == "Holding Register" || type == "Input Register") &&
-                <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)} />
-              }
+              <strong>{v!.address} </strong>
+              <div><Text size="lg">{JSON.stringify(v!.value)}</Text>
+                {
+                  (type == "Holding Register" || type == "Input Register") &&
+                  <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)}>
+                    <Text size="xs" c="gray.5" style={{ cursor: "pointer" }}>{typeArray[i]}</Text>
+                  </TypeSelector>
+                }</div>
             </Stack>
             <Divider orientation="vertical" />
           </Group>
