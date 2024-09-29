@@ -1,10 +1,10 @@
-import { Menu, Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Divider, Button } from "@mantine/core";
+import { Menu, Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Button } from "@mantine/core";
 import { IconCaretDownFilled, IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
-import { TypeSelector } from "./TypeSelector";
 import { notifications } from "@mantine/notifications";
+import { ResultDisplay } from "./ResultDisplay";
 type modbusData = main.modbusData;
 
 export enum dataTypes {
@@ -156,33 +156,7 @@ export function ReadTable() {
   }
 
   let content = error ? (<Text>{error}</Text>) : (
-    <Group>
-      {
-        typedData.length > 0 &&
-        <Stack gap="xs">
-          <Text>Register:</Text>
-          <Text>Value:</Text>
-        </Stack>
-      }
-      {
-        typedData.map((v, i) => (
-          <Group>
-            <Stack gap="xs"
-            >
-              <strong>{v!.address} </strong>
-              <div><Text size="lg">{JSON.stringify(v!.value)}</Text>
-                {
-                  (type == "Holding Register" || type == "Input Register") &&
-                  <TypeSelector v={typeArray[i]} updateType={(s) => setType(i, s)}>
-                    <Text size="xs" c="gray.5" style={{ cursor: "pointer" }}>{typeArray[i]}</Text>
-                  </TypeSelector>
-                }</div>
-            </Stack>
-            <Divider orientation="vertical" />
-          </Group>
-        ))
-      }
-    </Group>
+    <ResultDisplay type={type} typeArray={typeArray} typedData={typedData} setType={setType} />
   )
 
   const [refreshRate, setRefreshRate] = useState<string>("None")
@@ -258,3 +232,4 @@ export function ReadTable() {
     )
   }
 }
+
