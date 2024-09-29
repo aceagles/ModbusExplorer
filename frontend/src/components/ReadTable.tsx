@@ -132,7 +132,6 @@ export function ReadTable() {
 
   // Call the read function from the go backend
   function ReadModbus() {
-    console.log("Reading")
     Read(type, address as number, quantity as number)
       .then((data) => {
         if (data.length < rawData.length) {
@@ -143,6 +142,7 @@ export function ReadTable() {
       })
       .catch((err) => {
         setError(err)
+        setRefreshRate("None")
         notifications.show({
           title: "Failed to Read",
           message: err
