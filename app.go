@@ -43,9 +43,19 @@ func (a *App) Connect(ip string, port int, unitID int) error {
 		a.SetConnected(false)
 		return err
 	}
+
+	err = client.SetUnitId(uint8(unitID))
+	if err != nil {
+		a.SetConnected(false)
+		return err
+	}
 	a.SetConnected(true)
 	fmt.Println("Connected")
 	return nil
+}
+
+func (a *App) SetUnitId(id uint8) error {
+	return a.client.SetUnitId(id)
 }
 
 func (a *App) Disconnect() {
@@ -70,11 +80,12 @@ func (a *App) Read(inputType string, address uint16, quantity uint16) ([]modbusD
 		return nil, errors.New("Client is not configured.")
 	}
 	if !a.connected {
-		err := a.client.Open()
-		if err != nil {
-			return nil, err
-		}
-		a.SetConnected(true)
+		// err := a.client.Open()
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// a.SetConnected(true)
+		return nil, errors.New("Disconnected from server.")
 	}
 	var regType modbus.RegType
 	var results []uint16

@@ -10,4 +10,6 @@ export function Read(arg1:string,arg2:number,arg3:number):Promise<Array<main.mod
 
 export function SetConnected(arg1:boolean):Promise<void>;
 
+export function SetUnitId(arg1:number):Promise<void>;
+
 export function Write(arg1:string,arg2:number,arg3:Array<number>):Promise<void>;
