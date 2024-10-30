@@ -101,7 +101,7 @@ export function ReadTable() {
           ]);
           let val = new Float32Array(u32.buffer)[0];
           let displayVal = "";
-          if (val < 1) {
+          if (val < 1 && val > -1) {
             displayVal = val.toPrecision(4);
           } else if (val % 1 < 0.001) {
             displayVal = val.toFixed(0);
