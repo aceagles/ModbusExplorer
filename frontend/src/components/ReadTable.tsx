@@ -1,4 +1,16 @@
-import { Menu, Box, Text, Stack, Container, Group, NumberInput, Select, Table, ActionIcon, Button } from "@mantine/core";
+import {
+  Menu,
+  Box,
+  Text,
+  Stack,
+  Container,
+  Group,
+  NumberInput,
+  Select,
+  Table,
+  ActionIcon,
+  Button,
+} from "@mantine/core";
 import { IconCaretDownFilled, IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Read } from "../../wailsjs/go/main/App";
@@ -19,12 +31,14 @@ export enum dataTypes {
 export function ReadTable() {
   // rawData array of modbusData
   const [rawData, setRawData] = useState<modbusData[]>([]);
-  const [typeArray, setTypeArray] = useState<dataTypes[]>(Array(rawData.length).fill(dataTypes.U16));
-  const [error, setError] = useState<string>('')
+  const [typeArray, setTypeArray] = useState<dataTypes[]>(
+    Array(rawData.length).fill(dataTypes.U16)
+  );
+  const [error, setError] = useState<string>("");
 
   // Form data TODO: replace with mantine form handler
-  const [address, setAddress] = useState<string | number>('');
-  const [quantity, setQuantity] = useState<string | number>('');
+  const [address, setAddress] = useState<string | number>("");
+  const [quantity, setQuantity] = useState<string | number>("");
   const [type, setReadType] = useState<string>("Holding Register");
 
   // Update the array of data types whenever the number of fields returned changes.
@@ -36,62 +50,77 @@ export function ReadTable() {
 
   // Copy of raw data as getting the typed data consumes the array.
   const rawDataCopy = [...rawData];
-  const typedData: ({ address: number, value: any } | undefined)[] = typeArray.map((type, i) => {
-    // Iterate through the array of data types and convert respectively.
-    // Consumes the array since there will be a different number of output elements depending
-    // on the data types selected
-    if (rawDataCopy.length == 0) return { address: 0, value: 0 };
-    switch (type) {
-      case dataTypes.BIN:
-        {
+  const typedData: ({ address: number; value: any } | undefined)[] =
+    typeArray.map((type, i) => {
+      // Iterate through the array of data types and convert respectively.
+      // Consumes the array since there will be a different number of output elements depending
+      // on the data types selected
+      if (rawDataCopy.length == 0) return { address: 0, value: 0 };
+      switch (type) {
+        case dataTypes.BIN: {
           const val = rawDataCopy.shift();
           // Convert to binary showing leading zeros
-          const stringVal = val!.Value.toString(2).padStart(16, '0')
-          const strings = stringVal.match(/.{1,4}/g)
-          return { address: val!.Address, value: strings?.join(' ') };
+          const stringVal = val!.Value.toString(2).padStart(16, "0");
+          const strings = stringVal.match(/.{1,4}/g);
+          return { address: val!.Address, value: strings?.join(" ") };
         }
-      case dataTypes.U16:
-        {
+        case dataTypes.U16: {
           const val = rawDataCopy.shift();
           return { address: val!.Address, value: val!.Value };
         }
-      case dataTypes.U32:
-        {
+        case dataTypes.U32: {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
-          return { address: val1!.Address, value: ((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0) };
+          return {
+            address: val1!.Address,
+            value: ((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0),
+          };
         }
-      case dataTypes.I16:
-        {
+        case dataTypes.I16: {
           const val = rawDataCopy.shift();
           const value = val!.Value;
           // Convert U16 to I16 using 2's complement
-          const signedValue = value > 0x7FFF ? value - 0x10000 : value;
+          const signedValue = value > 0x7fff ? value - 0x10000 : value;
           return { address: val!.Address, value: signedValue };
         }
-      case dataTypes.I32:
-        {
+        case dataTypes.I32: {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
           const combinedValue = (val1!.Value << 16) + val2!.Value;
-          const signedValue = combinedValue > 0x7FFFFFFF ? combinedValue - 0x100000000 : combinedValue;
+          const signedValue =
+            combinedValue > 0x7fffffff
+              ? combinedValue - 0x100000000
+              : combinedValue;
           return { address: val1!.Address, value: signedValue };
         }
-      case dataTypes.F32:
-        {
+        case dataTypes.F32: {
           const val1 = rawDataCopy.shift();
           const val2 = rawDataCopy.shift();
-          const u32 = new Uint32Array([((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0)])
-          return { address: val1!.Address, value: new Float32Array(u32.buffer)[0] };
+          const u32 = new Uint32Array([
+            ((val1!.Value << 16) >>> 0) + (val2!.Value >>> 0),
+          ]);
+          let val = new Float32Array(u32.buffer)[0];
+          let displayVal = "";
+          if (val < 1) {
+            displayVal = val.toPrecision(4);
+          } else if (val % 1 < 0.001) {
+            displayVal = val.toFixed(0);
+          } else {
+            displayVal = val.toFixed(3);
+          }
+          return {
+            address: val1!.Address,
+            value: displayVal,
+          };
         }
-    }
-  });
+      }
+    });
 
   // Sets an index to an array type. Needs to also handle removing or re-adding the following element
   // depending on the number of registers the type requires
   function setType(i: number, type: dataTypes) {
     if (typeArray[i] === type) {
-      return
+      return;
     }
     switch (type) {
       // 16 bit types
@@ -101,7 +130,11 @@ export function ReadTable() {
         setTypeArray((prev) => {
           let previousType = prev[i];
           prev[i] = type;
-          if (previousType === dataTypes.U32 || previousType === dataTypes.I32 || previousType === dataTypes.F32) {
+          if (
+            previousType === dataTypes.U32 ||
+            previousType === dataTypes.I32 ||
+            previousType === dataTypes.F32
+          ) {
             prev.splice(i + 1, 0, dataTypes.U16);
           }
           return [...prev];
@@ -118,9 +151,17 @@ export function ReadTable() {
           let previousType = prev[i];
           prev[i] = type;
           // if previous type was 16 bit
-          if (previousType === dataTypes.U16 || previousType === dataTypes.I16 || previousType === dataTypes.BIN) {
+          if (
+            previousType === dataTypes.U16 ||
+            previousType === dataTypes.I16 ||
+            previousType === dataTypes.BIN
+          ) {
             // if next type in a rray is 32 bit then convert it back to 16 bit as the first register has just been nicked
-            if (prev[i + 1] === dataTypes.U32 || prev[i + 1] === dataTypes.I32 || prev[i + 1] === dataTypes.F32) {
+            if (
+              prev[i + 1] === dataTypes.U32 ||
+              prev[i + 1] === dataTypes.I32 ||
+              prev[i + 1] === dataTypes.F32
+            ) {
               prev[i + 1] = dataTypes.U16;
             } else {
               prev.splice(i + 1, 1);
@@ -135,9 +176,9 @@ export function ReadTable() {
   // Call the read function from the go backend
   function ReadModbus() {
     if (address === "" || quantity === "") {
-      setError("Enter an address and quantity.")
-      setRefreshRate("None")
-      return
+      setError("Enter an address and quantity.");
+      setRefreshRate("None");
+      return;
     }
     Read(type, address as number, quantity as number)
       .then((data) => {
@@ -145,93 +186,159 @@ export function ReadTable() {
           setTypeArray(Array(data.length).fill(dataTypes.U16));
         }
         setRawData(data);
-        setError('')
+        setError("");
       })
       .catch((err) => {
-        setError(err)
-        setRefreshRate("None")
+        setError(err);
+        setRefreshRate("None");
         notifications.show({
           title: "Failed to Read",
-          message: err
-        })
+          message: err,
+        });
       });
   }
 
-  let content = error ? (<Text>{error}</Text>) : (
-    <ResultDisplay type={type} typeArray={typeArray} typedData={typedData} setType={setType} />
-  )
+  let content = error ? (
+    <Text>{error}</Text>
+  ) : (
+    <ResultDisplay
+      type={type}
+      typeArray={typeArray}
+      typedData={typedData}
+      setType={setType}
+    />
+  );
 
-  const [refreshRate, setRefreshRate] = useState<string>("None")
+  const [refreshRate, setRefreshRate] = useState<string>("None");
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     // Don't auto fetch if set to none or the menu is open
     if (refreshRate == "None" || opened) return;
-    let refresh = 0
+    let refresh = 0;
     switch (refreshRate) {
       case "1s":
         refresh = 1000;
-        break
+        break;
       case "2s":
         refresh = 2000;
-        break
+        break;
       case "5s":
         refresh = 5000;
-        break
+        break;
       case "10s":
         refresh = 10000;
-        break
+        break;
       case "30s":
         refresh = 30000;
-        break
+        break;
     }
-    const interval = setInterval(ReadModbus, refresh)
-    return () => clearInterval(interval)
-  }, [refreshRate, address, quantity, opened]) // Needs to depend on all of these or ReadModbus will become out of date compared to the inputs 
-
+    const interval = setInterval(ReadModbus, refresh);
+    return () => clearInterval(interval);
+  }, [refreshRate, address, quantity, opened]); // Needs to depend on all of these or ReadModbus will become out of date compared to the inputs
 
   return (
     <Stack>
       <Group justify="">
-        <NumberInput label="Start Register:" min={0} placeholder="Start Register" size="xs"
-          radius="xs" onChange={setAddress} />
-        <NumberInput placeholder="Quantity" label="Quantity:" size="xs" min={1} max={125}
-          radius="xs" onChange={setQuantity} />
-        <Select data={["Holding Register", "Discrete Input", "Input Register", "Coil"]} value={type} size="xs" label="Register Type"
-          radius="xs" onChange={value => { setReadType(value!); setRawData([]) }} />
+        <NumberInput
+          label="Start Register:"
+          min={0}
+          placeholder="Start Register"
+          size="xs"
+          radius="xs"
+          onChange={setAddress}
+        />
+        <NumberInput
+          placeholder="Quantity"
+          label="Quantity:"
+          size="xs"
+          min={1}
+          max={125}
+          radius="xs"
+          onChange={setQuantity}
+        />
+        <Select
+          data={[
+            "Holding Register",
+            "Discrete Input",
+            "Input Register",
+            "Coil",
+          ]}
+          value={type}
+          size="xs"
+          label="Register Type"
+          radius="xs"
+          onChange={(value) => {
+            setReadType(value!);
+            setRawData([]);
+          }}
+        />
         <br />
-        <RefreshSelector opened={opened} setOpened={setOpened} refreshRate={refreshRate} setRate={setRefreshRate} ReadModbus={ReadModbus} />
+        <RefreshSelector
+          opened={opened}
+          setOpened={setOpened}
+          refreshRate={refreshRate}
+          setRate={setRefreshRate}
+          ReadModbus={ReadModbus}
+        />
       </Group>
       {content}
     </Stack>
   );
 
-  function RefreshSelector(props: { opened: boolean, setOpened: (b: boolean) => void, setRate: (rate: string) => void, refreshRate: string, ReadModbus: () => void }) {
+  function RefreshSelector(props: {
+    opened: boolean;
+    setOpened: (b: boolean) => void;
+    setRate: (rate: string) => void;
+    refreshRate: string;
+    ReadModbus: () => void;
+  }) {
     return (
       <div>
-        <Button size="xs" onClick={props.ReadModbus} variant="default" p={"2px"} style={{ borderBottomRightRadius: 0, borderTopRightRadius: 0, borderRight: "0px" }}>
+        <Button
+          size="xs"
+          onClick={props.ReadModbus}
+          variant="default"
+          p={"2px"}
+          style={{
+            borderBottomRightRadius: 0,
+            borderTopRightRadius: 0,
+            borderRight: "0px",
+          }}
+        >
           <IconRefresh />
         </Button>
-        <Menu shadow="md" width={80} opened={props.opened} onChange={props.setOpened}>
+        <Menu
+          shadow="md"
+          width={80}
+          opened={props.opened}
+          onChange={props.setOpened}
+        >
           <Menu.Target>
-            <Button size="xs" variant="default" style={{ borderBottomLeftRadius: 0, borderTopLeftRadius: 0, borderLeft: "0px" }}>
-              {
-                props.refreshRate == "None" ?
-                  <IconCaretDownFilled /> : <Text>{props.refreshRate}</Text>
-              }
+            <Button
+              size="xs"
+              variant="default"
+              style={{
+                borderBottomLeftRadius: 0,
+                borderTopLeftRadius: 0,
+                borderLeft: "0px",
+              }}
+            >
+              {props.refreshRate == "None" ? (
+                <IconCaretDownFilled />
+              ) : (
+                <Text>{props.refreshRate}</Text>
+              )}
             </Button>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Label>Refresh Rate</Menu.Label>
-            {
-              ["None", "1s", "5s", "10s", "30s"].map((v) => (
-                <Menu.Item onClick={() => props.setRate(v)}>{v}</Menu.Item>
-              ))
-            }
+            {["None", "1s", "5s", "10s", "30s"].map((v) => (
+              <Menu.Item onClick={() => props.setRate(v)}>{v}</Menu.Item>
+            ))}
           </Menu.Dropdown>
         </Menu>
       </div>
-    )
+    );
   }
 }
-
