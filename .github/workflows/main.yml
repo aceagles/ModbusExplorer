@@ -38,6 +38,7 @@ jobs:
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
+          nsis: true
   build-linux-2404:
     runs-on: ubuntu-latest
     steps:
