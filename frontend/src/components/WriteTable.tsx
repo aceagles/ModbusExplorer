@@ -24,7 +24,7 @@ export function WriteTable() {
   const [writeValue, setWriteValue] = useState<number | string>(0);
   const [regType, setRegType] = useState<string>("Holding Register");
   function setWrite() {
-    if (address == "") {
+    if (address === "") {
       notifications.show({
         title: "Failed to Write",
         message: "Set an address.",
@@ -114,7 +114,7 @@ export function WriteTable() {
               }}
             >
               <Button
-                onClick={() => {}}
+                onClick={() => { }}
                 variant="default"
                 radius="xs"
                 size="xs"
