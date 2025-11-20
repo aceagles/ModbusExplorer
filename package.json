@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "makensis": "^3.0.3"
+  }
+}
